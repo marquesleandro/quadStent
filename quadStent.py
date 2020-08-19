@@ -123,7 +123,9 @@ start_time = time()
 
 # Linear and Mini Elements
 if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
- mshFileName = 'linearHalfPoiseuille.msh'
+ #mshFileName = 'linearHalfPoiseuille.msh'
+ #mshFileName = 'linearStraightGeo.msh'
+ mshFileName = 'linearCurvedGeoStrut1.msh'
 
  pathMSHFile = searchMSH.Find(mshFileName)
  if pathMSHFile == 'File not found':
@@ -149,8 +151,8 @@ if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
   Re = 100.0
   Sc = 1.0
   CFL = 0.5
-  #dt = float(CFL*minLengthMesh)
-  dt = 0.1   #SL 
+  dt = float(CFL*minLengthMesh)
+  #dt = 0.1   #SL 
 
  elif polynomial_option == 2:
   mesh = importMSH.Mini2D(pathMSHFile, mshFileName)
@@ -179,7 +181,9 @@ if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
 
 # Quad Element
 elif polynomial_option == 3:
- mshFileName = 'quadHalfPoiseuille.msh'
+ #mshFileName = 'quadHalfPoiseuille.msh'
+ #mshFileName = 'quadStraightGeo.msh'
+ mshFileName = 'quadCurvedGeoStrut.msh'
 
 
  
@@ -264,18 +268,18 @@ if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
 
  # Applying vx condition
  xVelocityLHS0 = sps.lil_matrix.copy(M)
- xVelocityBC = benchmarkProblems.linearHalfPoiseuille(numPhysical,numNodes,x,y)
+ xVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
  xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
  benchmark_problem = xVelocityBC.benchmark_problem
 
  # Applying vr condition
  yVelocityLHS0 = sps.lil_matrix.copy(M)
- yVelocityBC = benchmarkProblems.linearHalfPoiseuille(numPhysical,numNodes,x,y)
+ yVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
  yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
  
  # Applying psi condition
  streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
- streamFunctionBC = benchmarkProblems.linearHalfPoiseuille(numPhysical,numNodes,x,y)
+ streamFunctionBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
  streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
 
  # Applying vorticity condition
@@ -283,7 +287,7 @@ if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
 
  # Applying concentration condition
  concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
- concentrationBC = benchmarkProblems.linearHalfPoiseuille(numPhysical,numNodes,x,y)
+ concentrationBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
  concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
 
 
@@ -292,18 +296,18 @@ elif polynomial_option == 3:
 
  # Applying vx condition
  xVelocityLHS0 = sps.lil_matrix.copy(M)
- xVelocityBC = benchmarkProblems.quadHalfPoiseuille(numPhysical,numNodes,x,y)
+ xVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
  xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
  benchmark_problem = xVelocityBC.benchmark_problem
 
  # Applying vr condition
  yVelocityLHS0 = sps.lil_matrix.copy(M)
- yVelocityBC = benchmarkProblems.quadHalfPoiseuille(numPhysical,numNodes,x,y)
+ yVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
  yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
  
  # Applying psi condition
  streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
- streamFunctionBC = benchmarkProblems.quadHalfPoiseuille(numPhysical,numNodes,x,y)
+ streamFunctionBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
  streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
 
  # Applying vorticity condition
@@ -311,7 +315,7 @@ elif polynomial_option == 3:
 
  # Applying concentration condition
  concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
- concentrationBC = benchmarkProblems.quadHalfPoiseuille(numPhysical,numNodes,x,y)
+ concentrationBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
  concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
 # ---------------------------------------------------------------------------------
 
@@ -348,7 +352,7 @@ psi = psi[0].reshape((len(psi[0]),1))
 
 
 # -------------------------- Import VTK File ------------------------------------
-#numNodes, numElements, IEN, x, y, vx, vy, w, psi, c = importVTK.vtkFile("/home/marquesleandro/aleHalfPoiseuille/libClass/quad499.vtk", polynomial_option)
+#numNodes, numElements, IEN, x, y, vx, vy, w, psi, c = importVTK.vtkFile("/home/marquesleandro/aleStent/libClass/quad499.vtk", polynomial_option)
 #----------------------------------------------------------------------------------
 
 
@@ -524,7 +528,7 @@ for t in tqdm(range(1, nt)):
     # Applying vx condition
     start_xVelocityBC_time = time()
     xVelocityLHS0 = sps.lil_matrix.copy(M)
-    xVelocityBC = benchmarkProblems.linearHalfPoiseuille(numPhysical,numNodes,x,y)
+    xVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
     xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
     benchmark_problem = xVelocityBC.benchmark_problem
     end_xVelocityBC_time = time()
@@ -535,7 +539,7 @@ for t in tqdm(range(1, nt)):
     # Applying vy condition
     start_yVelocityBC_time = time()
     yVelocityLHS0 = sps.lil_matrix.copy(M)
-    yVelocityBC = benchmarkProblems.linearHalfPoiseuille(numPhysical,numNodes,x,y)
+    yVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
     yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
     end_yVelocityBC_time = time()
     yVelocityBC_time = end_yVelocityBC_time - start_yVelocityBC_time
@@ -547,7 +551,7 @@ for t in tqdm(range(1, nt)):
     # Applying psi condition
     start_streamfunctionBC_time = time()
     streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
-    streamFunctionBC = benchmarkProblems.linearHalfPoiseuille(numPhysical,numNodes,x,y)
+    streamFunctionBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
     streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
     end_streamfunctionBC_time = time()
     streamfunctionBC_time = end_streamfunctionBC_time - start_streamfunctionBC_time
@@ -564,7 +568,7 @@ for t in tqdm(range(1, nt)):
     # Applying concentration condition
     start_concentrationBC_time = time()
     concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
-    concentrationBC = benchmarkProblems.linearHalfPoiseuille(numPhysical,numNodes,x,y)
+    concentrationBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
     concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
     end_concentrationBC_time = time()
     concentrationBC_time = end_concentrationBC_time - start_concentrationBC_time
@@ -580,7 +584,7 @@ for t in tqdm(range(1, nt)):
     # Applying vx condition
     start_xVelocityBC_time = time()
     xVelocityLHS0 = sps.lil_matrix.copy(M)
-    xVelocityBC = benchmarkProblems.quadHalfPoiseuille(numPhysical,numNodes,x,y)
+    xVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
     xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
     benchmark_problem = xVelocityBC.benchmark_problem
     end_xVelocityBC_time = time()
@@ -593,7 +597,7 @@ for t in tqdm(range(1, nt)):
     # Applying vy condition
     start_yVelocityBC_time = time()
     yVelocityLHS0 = sps.lil_matrix.copy(M)
-    yVelocityBC = benchmarkProblems.quadHalfPoiseuille(numPhysical,numNodes,x,y)
+    yVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
     yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
     end_yVelocityBC_time = time()
     yVelocityBC_time = end_yVelocityBC_time - start_yVelocityBC_time
@@ -605,7 +609,7 @@ for t in tqdm(range(1, nt)):
     # Applying psi condition
     start_streamfunctionBC_time = time()
     streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
-    streamFunctionBC = benchmarkProblems.quadHalfPoiseuille(numPhysical,numNodes,x,y)
+    streamFunctionBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
     streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
     end_streamfunctionBC_time = time()
     streamfunctionBC_time = end_streamfunctionBC_time - start_streamfunctionBC_time
@@ -619,7 +623,7 @@ for t in tqdm(range(1, nt)):
     # Applying concentration condition
     start_concentrationBC_time = time()
     concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
-    concentrationBC = benchmarkProblems.quadHalfPoiseuille(numPhysical,numNodes,x,y)
+    concentrationBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
     concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
     end_concentrationBC_time = time()
     concentrationBC_time = end_concentrationBC_time - start_concentrationBC_time
