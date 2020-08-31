@@ -49,10 +49,19 @@ print ""
 
 
 print ' ----------------------------------------------------------------------------'
+print ' (0) - Import VTK OFF'
+print ' (1) - Import VTK ON'
+import_option = int(raw_input("\n enter option above: "))
+print' ----------------------------------------------------------------------------\n'
+
+
+print ' ----------------------------------------------------------------------------'
 print ' (0) - Debug'
 print ' (1) - Simulation'
 simulation_option = int(raw_input("\n enter simulation option above: "))
 print' ----------------------------------------------------------------------------\n'
+
+
 
 
 
@@ -208,10 +217,10 @@ elif polynomial_option == 3:
  numPhysical            = mesh.numPhysical 
 
  Re = 100.0
- Sc = 1.0
+ Sc = 100.0
  CFL = 0.5
- #dt = float(CFL*minLengthMesh)
- dt = 0.01  
+ dt = float(CFL*minLengthMesh)
+ #dt = 0.01  
 
 
 
@@ -352,7 +361,11 @@ psi = psi[0].reshape((len(psi[0]),1))
 
 
 # -------------------------- Import VTK File ------------------------------------
-#numNodes, numElements, IEN, x, y, vx, vy, w, psi, c = importVTK.vtkFile("/home/marquesleandro/aleStent/libClass/quad499.vtk", polynomial_option)
+if import_option == 1:
+ numNodes, numElements, IEN, x, y, vx, vy, w, psi, c = importVTK.vtkFile("/home/marquesleandro/quadStent/results/quadCurved101/quadCurved101154.vtk", polynomial_option)
+ import_option = 'ON'
+elif import_option == 0:
+ import_option = 'OFF'
 #----------------------------------------------------------------------------------
 
 
@@ -378,6 +391,7 @@ print ' Number of nodes: %s' %numNodes
 print ' Number of elements: %s' %numElements
 print ' Smallest edge length: %f' %minLengthMesh
 print ' Time step: %s' %dt
+print ' Import VTK: %s' %import_option
 print ' Number of time iteration: %s' %nt
 print ' Reynolds number: %s' %Re
 print ' Schmidt number: %s' %Sc
@@ -450,6 +464,7 @@ for t in tqdm(range(1, nt)):
   print ' Number of elements: %s' %numElements
   print ' Smallest edge length: %f' %minLengthMesh
   print ' Time step: %s' %dt
+  print ' Import VTK: %s' %import_option
   print ' Number of time iteration: %s' %numIteration
   print ' Reynolds number: %s' %Re
   print ' Schmidt number: %s' %Sc
@@ -473,7 +488,7 @@ for t in tqdm(range(1, nt)):
   
   
    kLagrangian = 0.0
-   kLaplace = 0.5
+   kLaplace = 0.0
    kVelocity = 0.0
    
    vxLaplacianSmooth, vyLaplacianSmooth = ALE.Laplacian_smoothing(neighborsNodesALE, numNodes, x, y, dt)
