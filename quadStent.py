@@ -246,134 +246,142 @@ print ' time duration: %.1f seconds \n' %import_mesh_time
 
 
 
-
-
-print ' ---------'
-print ' ASSEMBLY:'
-print ' ---------'
-
-start_time = time()
-Kxx, Kxy, Kyx, Kyy, K, M, MLump, Gx, Gy, polynomial_order = assembly.Element2D(simulation_option, polynomial_option, FreedomDegree, numNodes, numElements, IEN, x, y, gausspoints)
-
-
-end_time = time()
-assembly_time = end_time - start_time
-print ' time duration: %.1f seconds \n' %assembly_time
-
-
-
-
-print ' --------------------------------'
-print ' INITIAL AND BOUNDARY CONDITIONS:'
-print ' --------------------------------'
-
-start_time = time()
-
-
-# ------------------------ Boundaries Conditions ----------------------------------
-
-# Linear and Mini Elements
-if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
-
- # Applying vx condition
- xVelocityLHS0 = sps.lil_matrix.copy(M)
- xVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
- xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
- benchmark_problem = xVelocityBC.benchmark_problem
-
- # Applying vr condition
- yVelocityLHS0 = sps.lil_matrix.copy(M)
- yVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
- yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
- 
- # Applying psi condition
- streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
- streamFunctionBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
- streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
-
- # Applying vorticity condition
- vorticityDirichletNodes = boundaryNodes
-
- # Applying concentration condition
- concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
- concentrationBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
- concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
-
-
-# Quad Element
-elif polynomial_option == 3:
-
- # Applying vx condition
- xVelocityLHS0 = sps.lil_matrix.copy(M)
- xVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
- xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
- benchmark_problem = xVelocityBC.benchmark_problem
-
- # Applying vr condition
- yVelocityLHS0 = sps.lil_matrix.copy(M)
- yVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
- yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
- 
- # Applying psi condition
- streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
- streamFunctionBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
- streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
-
- # Applying vorticity condition
- vorticityDirichletNodes = boundaryNodes
-
- # Applying concentration condition
- concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
- concentrationBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
- concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
-# ---------------------------------------------------------------------------------
-
-
-
-# -------------------------- Initial condition ------------------------------------
-vx = np.copy(xVelocityBC.aux1BC)
-vy = np.copy(yVelocityBC.aux1BC)
-psi = np.copy(streamFunctionBC.aux1BC)
-w = np.zeros([numNodes,1], dtype = float)
-c = np.copy(concentrationBC.aux1BC)
-# ---------------------------------------------------------------------------------
-
-
-
-
-#---------- Step 1 - Compute the vorticity and stream field --------------------
-# -----Vorticity initial-----
-vorticityRHS = sps.lil_matrix.dot(Gx,vy) - sps.lil_matrix.dot(Gy,vx)
-vorticityLHS = sps.lil_matrix.copy(M)
-w = scipy.sparse.linalg.cg(vorticityLHS,vorticityRHS,w, maxiter=1.0e+05, tol=1.0e-05)
-w = w[0].reshape((len(w[0]),1))
-
-
-# -----Streamline initial-----
-streamFunctionRHS = sps.lil_matrix.dot(M,w)
-streamFunctionRHS = np.multiply(streamFunctionRHS,streamFunctionBC.aux2BC)
-streamFunctionRHS = streamFunctionRHS + streamFunctionBC.dirichletVector
-psi = scipy.sparse.linalg.cg(streamFunctionBC.LHS,streamFunctionRHS,psi, maxiter=1.0e+05, tol=1.0e-05)
-psi = psi[0].reshape((len(psi[0]),1))
-#----------------------------------------------------------------------------------
-
-
-
-
 # -------------------------- Import VTK File ------------------------------------
-if import_option == 1:
- numNodes, numElements, IEN, x, y, vx, vy, w, psi, c = importVTK.vtkFile("/home/marquesleandro/quadStent/results/quadCurved102/quadCurved102347.vtk", polynomial_option)
- import_option = 'ON'
-elif import_option == 0:
+if import_option == 0:
  import_option = 'OFF'
+ 
+ print ' ---------'
+ print ' ASSEMBLY:'
+ print ' ---------'
+ 
+ start_time = time()
+ Kxx, Kxy, Kyx, Kyy, K, M, MLump, Gx, Gy, polynomial_order = assembly.Element2D(simulation_option, polynomial_option, FreedomDegree, numNodes, numElements, IEN, x, y, gausspoints)
+ 
+ 
+ end_time = time()
+ assembly_time = end_time - start_time
+ print ' time duration: %.1f seconds \n' %assembly_time
+ 
+ 
+ 
+ 
+ print ' --------------------------------'
+ print ' INITIAL AND BOUNDARY CONDITIONS:'
+ print ' --------------------------------'
+ 
+ start_time = time()
+ 
+ 
+ # ------------------------ Boundaries Conditions ----------------------------------
+ 
+ # Linear and Mini Elements
+ if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
+ 
+  # Applying vx condition
+  xVelocityLHS0 = sps.lil_matrix.copy(M)
+  xVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
+  xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
+  benchmark_problem = xVelocityBC.benchmark_problem
+ 
+  # Applying vr condition
+  yVelocityLHS0 = sps.lil_matrix.copy(M)
+  yVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
+  yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
+  
+  # Applying psi condition
+  streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
+  streamFunctionBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
+  streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
+ 
+  # Applying vorticity condition
+  vorticityDirichletNodes = boundaryNodes
+ 
+  # Applying concentration condition
+  concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
+  concentrationBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
+  concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
+ 
+ 
+ # Quad Element
+ elif polynomial_option == 3:
+ 
+  # Applying vx condition
+  xVelocityLHS0 = sps.lil_matrix.copy(M)
+  xVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
+  xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
+  benchmark_problem = xVelocityBC.benchmark_problem
+ 
+  # Applying vr condition
+  yVelocityLHS0 = sps.lil_matrix.copy(M)
+  yVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
+  yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
+  
+  # Applying psi condition
+  streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
+  streamFunctionBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
+  streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
+ 
+  # Applying vorticity condition
+  vorticityDirichletNodes = boundaryNodes
+ 
+  # Applying concentration condition
+  concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
+  concentrationBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
+  concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
+ # ---------------------------------------------------------------------------------
+ 
+ 
+ 
+ # -------------------------- Initial condition ------------------------------------
+ vx = np.copy(xVelocityBC.aux1BC)
+ vy = np.copy(yVelocityBC.aux1BC)
+ psi = np.copy(streamFunctionBC.aux1BC)
+ w = np.zeros([numNodes,1], dtype = float)
+ c = np.copy(concentrationBC.aux1BC)
+ # ---------------------------------------------------------------------------------
+ 
+ 
+ 
+ 
+ #---------- Step 1 - Compute the vorticity and stream field --------------------
+ # -----Vorticity initial-----
+ vorticityRHS = sps.lil_matrix.dot(Gx,vy) - sps.lil_matrix.dot(Gy,vx)
+ vorticityLHS = sps.lil_matrix.copy(M)
+ w = scipy.sparse.linalg.cg(vorticityLHS,vorticityRHS,w, maxiter=1.0e+05, tol=1.0e-05)
+ w = w[0].reshape((len(w[0]),1))
+ 
+ 
+ # -----Streamline initial-----
+ streamFunctionRHS = sps.lil_matrix.dot(M,w)
+ streamFunctionRHS = np.multiply(streamFunctionRHS,streamFunctionBC.aux2BC)
+ streamFunctionRHS = streamFunctionRHS + streamFunctionBC.dirichletVector
+ psi = scipy.sparse.linalg.cg(streamFunctionBC.LHS,streamFunctionRHS,psi, maxiter=1.0e+05, tol=1.0e-05)
+ psi = psi[0].reshape((len(psi[0]),1))
+ #----------------------------------------------------------------------------------
+
+
+ end_time = time()
+ bc_apply_time = end_time - start_time
+ print ' time duration: %.1f seconds \n' %bc_apply_time
+
+
+ 
+
+elif import_option == 1:
+ import_option = 'ON'
+ print "Import option ON"
+ 
+
+ start_time = time()
+ numNodes, numElements, IEN, x, y, vx, vy, w, psi, c, polynomial_order, benchmark_problem = importVTK.vtkFile("/home/marquesleandro/quadStent/results/linear5/linear510.vtk", polynomial_option)
+ end_time = time()
+ assembly_time = end_time - start_time 
+ bc_apply_time = end_time - start_time 
+ print ' time duration: %.1f seconds \n' %bc_apply_time
 #----------------------------------------------------------------------------------
 
 
 
-
-end_time = time()
-bc_apply_time = end_time - start_time
-print ' time duration: %.1f seconds \n' %bc_apply_time
 
 
 

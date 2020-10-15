@@ -13,6 +13,7 @@
 import numpy as np
 
 def vtkFile(_file, _polynomial_option): 
+ benchmark_problem = 'Continue simulation'
 
  vtkList = [] 
  with open(_file) as vtkFile:
@@ -36,8 +37,9 @@ def vtkFile(_file, _polynomial_option):
     numElements = int(vtkList[i][j+1])
 
     # Linear Element
-    if _polynomial_option == 1:
+    if _polynomial_option == 0 or _polynomial_option == 1:
      IEN = np.zeros([numElements,3], dtype = int)
+     polynomial_order = "Linear"
      for e in range(0,numElements):
       IEN[e][0] = int(vtkList[i+e+1][1])
       IEN[e][1] = int(vtkList[i+e+1][2])
@@ -47,6 +49,7 @@ def vtkFile(_file, _polynomial_option):
     # Quad Element
     elif _polynomial_option == 3:
      IEN = np.zeros([numElements,6], dtype = int)
+     polynomial_order = "Quadratic"
      for e in range(0,numElements):
       IEN[e][0] = int(vtkList[i+e+1][1])
       IEN[e][1] = int(vtkList[i+e+1][2])
@@ -83,4 +86,4 @@ def vtkFile(_file, _polynomial_option):
      scalar3[k] = float(vtkList[i+k+2][0])
     continue  
 
- return numNodes, numElements, IEN, x, y, vx, vy, scalar1, scalar2, scalar3
+ return numNodes, numElements, IEN, x, y, vx, vy, scalar1, scalar2, scalar3, polynomial_order, benchmark_problem
