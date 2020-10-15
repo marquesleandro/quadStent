@@ -219,8 +219,8 @@ elif polynomial_option == 3:
  Re = 100.0
  Sc = 100.0
  CFL = 0.5
- dt = float(CFL*minLengthMesh)
- #dt = 0.01  
+ #dt = float(CFL*minLengthMesh)
+ dt = 0.001  
 
 
 
@@ -362,7 +362,7 @@ psi = psi[0].reshape((len(psi[0]),1))
 
 # -------------------------- Import VTK File ------------------------------------
 if import_option == 1:
- numNodes, numElements, IEN, x, y, vx, vy, w, psi, c = importVTK.vtkFile("/home/marquesleandro/quadStent/results/quadCurved101/quadCurved101154.vtk", polynomial_option)
+ numNodes, numElements, IEN, x, y, vx, vy, w, psi, c = importVTK.vtkFile("/home/marquesleandro/quadStent/results/quadCurved102/quadCurved102347.vtk", polynomial_option)
  import_option = 'ON'
 elif import_option == 0:
  import_option = 'OFF'
