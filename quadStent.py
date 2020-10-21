@@ -52,6 +52,9 @@ print ' ------------------------------------------------------------------------
 print ' (0) - Import VTK OFF'
 print ' (1) - Import VTK ON'
 import_option = int(raw_input("\n enter option above: "))
+if import_option == 1:
+ folderName = raw_input("\n enter simulation folder name VTK import: ")
+ numberStep = int(raw_input("\n enter number step VTK import: "))
 print' ----------------------------------------------------------------------------\n'
 
 
@@ -217,10 +220,10 @@ elif polynomial_option == 3:
  numPhysical            = mesh.numPhysical 
 
  Re = 100.0
- Sc = 100.0
+ Sc = 1.0
  CFL = 0.5
- #dt = float(CFL*minLengthMesh)
- dt = 0.001  
+ dt = float(CFL*minLengthMesh)
+ #dt = 0.001  
 
 
 
@@ -373,7 +376,8 @@ elif import_option == 1:
  
 
  start_time = time()
- numNodes, numElements, IEN, x, y, vx, vy, w, psi, c, polynomial_order, benchmark_problem = importVTK.vtkFile("/home/marquesleandro/quadStent/results/linear5/linear510.vtk", polynomial_option)
+ #numNodes, numElements, IEN, x, y, vx, vy, w, psi, c, polynomial_order, benchmark_problem = importVTK.vtkFile("/home/marquesleandro/quadStent/results/vorticityNull1/vorticityNull1311.vtk", polynomial_option)
+ numNodes, numElements, IEN, x, y, vx, vy, w, psi, c, polynomial_order, benchmark_problem = importVTK.vtkFile("/home/marquesleandro/quadStent/results/" + folderName + "/" + folderName + str(numberStep) + ".vtk", polynomial_option)
  end_time = time()
  assembly_time = end_time - start_time 
  bc_apply_time = end_time - start_time 
@@ -703,6 +707,20 @@ for t in tqdm(range(1, nt)):
   vorticityLHS = sps.lil_matrix.copy(M)
   vorticityAux1BC = scipy.sparse.linalg.cg(vorticityLHS,vorticityRHS,vorticityAux1BC, maxiter=1.0e+05, tol=1.0e-05)
   vorticityAux1BC = vorticityAux1BC[0].reshape((len(vorticityAux1BC[0]),1))
+
+
+  if polynomial_option == 3: #Quad
+   for i in range(0,len(boundaryEdges)):
+    line = boundaryEdges[i][0]
+    v1 = boundaryEdges[i][1] - 1
+    v2 = boundaryEdges[i][2] - 1
+    v3 = boundaryEdges[i][3] - 1
+
+    if line == 4: #vorticity null forced
+     vorticityAux1BC[v1] = 0.0
+     vorticityAux1BC[v2] = 0.0
+     vorticityAux1BC[v3] = 0.0
+ 
  
   # Gaussian elimination
   vorticityDirichletVector = np.zeros([numNodes,1], dtype = float)
