@@ -219,11 +219,11 @@ elif polynomial_option == 3:
  FreedomDegree          = mesh.FreedomDegree
  numPhysical            = mesh.numPhysical 
 
- Re = 100.0
- Sc = 1.0
+ Re = 54.5
+ Sc = 10.0
  CFL = 0.5
- dt = float(CFL*minLengthMesh)
- #dt = 0.001  
+ #dt = float(CFL*minLengthMesh)
+ dt = 0.005  
 
 
 
