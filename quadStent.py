@@ -160,7 +160,7 @@ if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
   FreedomDegree          = mesh.FreedomDegree
   numPhysical            = mesh.numPhysical 
 
-  Re = 100.0
+  Re = 54.5
   Sc = 1.0
   CFL = 0.5
   dt = float(CFL*minLengthMesh)
@@ -182,7 +182,7 @@ if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
   minLengthMesh          = mesh.minLengthMesh
   FreedomDegree          = mesh.FreedomDegree
   numPhysical            = mesh.numPhysical 
-  Re = 100.0
+  Re = 54.5
   Sc = 1.0
   CFL = 0.5
   dt = float(CFL*minLengthMesh)
@@ -195,7 +195,9 @@ if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
 elif polynomial_option == 3:
  #mshFileName = 'quadHalfPoiseuille.msh'
  #mshFileName = 'quadStraightGeo.msh'
- mshFileName = 'quadCurvedGeoStrut.msh'
+ #mshFileName = 'quadCurvedGeoStrut.msh'
+ mshFileName = 'quadRealGeoStrut.msh'
+ #mshFileName = 'quadCurvedGeo.msh'
 
 
  
@@ -220,7 +222,7 @@ elif polynomial_option == 3:
  numPhysical            = mesh.numPhysical 
 
  Re = 54.5
- Sc = 10.0
+ Sc = 1.0
  CFL = 0.5
  #dt = float(CFL*minLengthMesh)
  dt = 0.005  
@@ -709,7 +711,18 @@ for t in tqdm(range(1, nt)):
   vorticityAux1BC = vorticityAux1BC[0].reshape((len(vorticityAux1BC[0]),1))
 
 
-  if polynomial_option == 3: #Quad
+  if polynomial_option == 0 or polynomial_option == 1: #Linear
+   for i in range(0,len(boundaryEdges)):
+    line = boundaryEdges[i][0]
+    v1 = boundaryEdges[i][1] - 1
+    v2 = boundaryEdges[i][2] - 1
+
+    if line == 4: #vorticity null forced
+     vorticityAux1BC[v1] = 0.0
+     vorticityAux1BC[v2] = 0.0
+ 
+
+  elif polynomial_option == 3: #Quad
    for i in range(0,len(boundaryEdges)):
     line = boundaryEdges[i][0]
     v1 = boundaryEdges[i][1] - 1
