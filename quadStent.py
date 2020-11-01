@@ -196,8 +196,13 @@ elif polynomial_option == 3:
  #mshFileName = 'quadHalfPoiseuille.msh'
  #mshFileName = 'quadStraightGeo.msh'
  #mshFileName = 'quadCurvedGeoStrut.msh'
- mshFileName = 'quadRealGeoStrut.msh'
+ #mshFileName = 'quadRealGeoStrut.msh'
  #mshFileName = 'quadCurvedGeo.msh'
+ mshFileName = 'quad1.msh'
+ #mshFileName = 'quad2.msh'
+ #mshFileName = 'quad3.msh'
+ #mshFileName = 'quad4.msh'
+ #mshFileName = 'quad5.msh'
 
 
  
@@ -225,7 +230,7 @@ elif polynomial_option == 3:
  Sc = 1.0
  CFL = 0.5
  #dt = float(CFL*minLengthMesh)
- dt = 0.0005  
+ dt = 0.001  
 
 
 
