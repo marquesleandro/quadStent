@@ -49,6 +49,14 @@ print ""
 
 
 print ' ----------------------------------------------------------------------------'
+print ' (0) - Debug'
+print ' (1) - Simulation'
+simulation_option = int(raw_input("\n enter simulation option above: "))
+print' ----------------------------------------------------------------------------\n'
+
+
+
+print ' ----------------------------------------------------------------------------'
 print ' (0) - Import VTK OFF'
 print ' (1) - Import VTK ON'
 import_option = int(raw_input("\n enter option above: "))
@@ -58,10 +66,17 @@ if import_option == 1:
 print' ----------------------------------------------------------------------------\n'
 
 
+
 print ' ----------------------------------------------------------------------------'
-print ' (0) - Debug'
-print ' (1) - Simulation'
-simulation_option = int(raw_input("\n enter simulation option above: "))
+print ' (1) - ALE'
+print ' (2) - Eulerian'
+description_option = int(raw_input("\n enter motion description option above: "))
+if description_option == 1:
+ kLagrangian = float(raw_input("\n enter the control parameter of the Lagrangian: "))
+ kLaplacian = float(raw_input("\n enter the control parameter of the Laplacian: "))
+ description_name = 'ALE'
+else:
+ description_name = 'Eulerian'
 print' ----------------------------------------------------------------------------\n'
 
 
@@ -196,9 +211,9 @@ elif polynomial_option == 3:
  #mshFileName = 'quadHalfPoiseuille.msh'
  #mshFileName = 'quadStraightGeo.msh'
  #mshFileName = 'quadCurvedGeoStrut.msh'
- #mshFileName = 'quadRealGeoStrut.msh'
+ mshFileName = 'quadRealGeoStrut.msh'
  #mshFileName = 'quadCurvedGeo.msh'
- mshFileName = 'quad1.msh'
+ #mshFileName = 'quad1.msh'
  #mshFileName = 'quad2.msh'
  #mshFileName = 'quad3.msh'
  #mshFileName = 'quad4.msh'
@@ -228,9 +243,10 @@ elif polynomial_option == 3:
 
  Re = 54.5
  Sc = 1.0
- CFL = 0.5
- #dt = float(CFL*minLengthMesh)
- dt = 0.001  
+ CFL = 1.0
+ vMax = 4.0
+ dt = float(CFL*minLengthMesh/vMax)
+ #dt = 0.0005  
 
 
 
@@ -402,6 +418,7 @@ print ' PARAMETERS OF THE SIMULATION:'
 print ' -----------------------------'
 
 print ' Benchmark Problem: %s' %benchmark_problem
+print ' Motion Description: %s' %str(description_name)
 print ' Scheme: %s' %str(scheme_name)
 print ' Element Type: %s' %str(polynomial_order)
 print ' Gaussian Quadrature (Gauss Points): %s' %str(gausspoints)
@@ -475,6 +492,7 @@ for t in tqdm(range(1, nt)):
   print ' -----------------------------'
  
   print ' Benchmark Problem: %s' %benchmark_problem
+  print ' Motion Description: %s' %str(description_name)
   print ' Scheme: %s' %str(scheme_name)
   print ' Element Type: %s' %str(polynomial_order)
   print ' Gaussian Quadrature (Gauss Points): %s' %str(gausspoints)
@@ -491,178 +509,183 @@ for t in tqdm(range(1, nt)):
  
  
   # ------------------------- ALE Scheme --------------------------------------------
-  xmeshALE_dif = np.linalg.norm(x-x_old)
-  ymeshALE_dif = np.linalg.norm(y-y_old)
-  if not xmeshALE_dif < 5e-3 and not ymeshALE_dif < 5e-3:
-   x_old = np.copy(x)
-   y_old = np.copy(y)
-  
-   print ""
-   print ' ------------'
-   print ' MESH UPDATE:'
-   print ' ------------'
-  
-  
-   start_time = time()
-  
-  
-   kLagrangian = 0.0
-   kLaplace = 0.0
-   kVelocity = 0.0
+  if description_option == 1:
+   xmeshALE_dif = np.linalg.norm(x-x_old)
+   ymeshALE_dif = np.linalg.norm(y-y_old)
+   if not xmeshALE_dif < 5e-3 and not ymeshALE_dif < 5e-3:
+    x_old = np.copy(x)
+    y_old = np.copy(y)
    
-   vxLaplacianSmooth, vyLaplacianSmooth = ALE.Laplacian_smoothing(neighborsNodesALE, numNodes, x, y, dt)
-   #vxLaplacianSmooth, vyLaplacianSmooth = ALE.Laplacian_smoothing_avg(neighborsNodesALE, numNodes, x, y, dt)
-   vxVelocitySmooth,  vyVelocitySmooth  = ALE.Velocity_smoothing(neighborsNodesALE, numNodes, vx, vy)
- 
-   vxALE = kLagrangian*vx + kLaplace*vxLaplacianSmooth + kVelocity*vxVelocitySmooth
-   vyALE = kLagrangian*vy + kLaplace*vyLaplacianSmooth + kVelocity*vyVelocitySmooth
-  
-  
-   for i in boundaryNodes:
-    node = i-1 
-    vxALE[node] = 0.0
-    vyALE[node] = 0.0
-  
-   x = x + vxALE*dt
-   y = y + vyALE*dt
-  
-   vxSL = vx - vxALE
-   vySL = vy - vyALE
-  
-   end_time = time()
-   ALE_time_solver = end_time - start_time
-   print ' time duration: %.1f seconds' %ALE_time_solver
-   # ---------------------------------------------------------------------------------
-  
- 
- 
- 
-   # ------------------------- Assembly --------------------------------------------
-   print ""
-   print ' ---------'
-   print ' ASSEMBLY:'
-   print ' ---------'
- 
-   Kxx, Kxy, Kyx, Kyy, K, M, MLump, Gx, Gy, polynomial_order = assembly.Element2D(simulation_option, polynomial_option, FreedomDegree, numNodes, numElements, IEN, x, y, gausspoints)
-   # --------------------------------------------------------------------------------
- 
- 
- 
- 
-   # ------------------------ Boundaries Conditions ----------------------------------
-   print ""
-   print ' --------------------------------'
-   print ' INITIAL AND BOUNDARY CONDITIONS:'
-   print ' --------------------------------'
-
+    print ""
+    print ' ------------'
+    print ' MESH UPDATE:'
+    print ' ------------'
    
-   # Linear and Mini Elements
-   if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
- 
-    # Applying vx condition
-    start_xVelocityBC_time = time()
-    xVelocityLHS0 = sps.lil_matrix.copy(M)
-    xVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
-    xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
-    benchmark_problem = xVelocityBC.benchmark_problem
-    end_xVelocityBC_time = time()
-    xVelocityBC_time = end_xVelocityBC_time - start_xVelocityBC_time
-    print ' xVelocity BC: %.1f seconds' %xVelocityBC_time
-
    
-    # Applying vy condition
-    start_yVelocityBC_time = time()
-    yVelocityLHS0 = sps.lil_matrix.copy(M)
-    yVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
-    yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
-    end_yVelocityBC_time = time()
-    yVelocityBC_time = end_yVelocityBC_time - start_yVelocityBC_time
-    print ' yVelocity BC: %.1f seconds' %yVelocityBC_time
-
-
-
+    start_time = time()
+   
+   
+    vxLaplacianSmooth, vyLaplacianSmooth = ALE.Laplacian_smoothing(neighborsNodesALE, numNodes, x, y, dt)
+    #vxLaplacianSmooth, vyLaplacianSmooth = ALE.Laplacian_smoothing_avg(neighborsNodesALE, numNodes, x, y, dt)
+    vxVelocitySmooth,  vyVelocitySmooth  = ALE.Velocity_smoothing(neighborsNodesALE, numNodes, vx, vy)
+  
+    vxMesh = kLagrangian*vx + kLaplacian*vxLaplacianSmooth
+    vyMesh = kLagrangian*vy + kLaplacian*vyLaplacianSmooth
+   
+   
+    for i in boundaryNodes:
+     node = i-1 
+     vxMesh[node] = 0.0
+     vyMesh[node] = 0.0
+   
+    x = x + vxMesh*dt
+    y = y + vyMesh*dt
+   
+    vxALE = vx - vxMesh
+    vyALE = vy - vyMesh
+   
+    end_time = time()
+    ALE_time_solver = end_time - start_time
+    print ' time duration: %.1f seconds' %ALE_time_solver
+    # ---------------------------------------------------------------------------------
+   
+  
+  
+  
+    # ------------------------- Assembly --------------------------------------------
+    print ""
+    print ' ---------'
+    print ' ASSEMBLY:'
+    print ' ---------'
+  
+    Kxx, Kxy, Kyx, Kyy, K, M, MLump, Gx, Gy, polynomial_order = assembly.Element2D(simulation_option, polynomial_option, FreedomDegree, numNodes, numElements, IEN, x, y, gausspoints)
+    # --------------------------------------------------------------------------------
+  
+  
+  
+  
+    # ------------------------ Boundaries Conditions ----------------------------------
+    print ""
+    print ' --------------------------------'
+    print ' INITIAL AND BOUNDARY CONDITIONS:'
+    print ' --------------------------------'
+ 
     
-    # Applying psi condition
-    start_streamfunctionBC_time = time()
-    streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
-    streamFunctionBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
-    streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
-    end_streamfunctionBC_time = time()
-    streamfunctionBC_time = end_streamfunctionBC_time - start_streamfunctionBC_time
-    print ' streamfunction BC: %.1f seconds' %streamfunctionBC_time
-
-
-
-   
-    # Applying vorticity condition
-    vorticityDirichletNodes = boundaryNodes
-
-
-   
-    # Applying concentration condition
-    start_concentrationBC_time = time()
-    concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
-    concentrationBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
-    concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
-    end_concentrationBC_time = time()
-    concentrationBC_time = end_concentrationBC_time - start_concentrationBC_time
-    print ' concentration BC: %.1f seconds' %concentrationBC_time
-
-
-
-   
+    # Linear and Mini Elements
+    if polynomial_option == 0 or polynomial_option == 1 or polynomial_option == 2:
   
-   # Quad Element
-   elif polynomial_option == 3:
+     # Applying vx condition
+     start_xVelocityBC_time = time()
+     xVelocityLHS0 = sps.lil_matrix.copy(M)
+     xVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
+     xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
+     benchmark_problem = xVelocityBC.benchmark_problem
+     end_xVelocityBC_time = time()
+     xVelocityBC_time = end_xVelocityBC_time - start_xVelocityBC_time
+     print ' xVelocity BC: %.1f seconds' %xVelocityBC_time
  
-    # Applying vx condition
-    start_xVelocityBC_time = time()
-    xVelocityLHS0 = sps.lil_matrix.copy(M)
-    xVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
-    xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
-    benchmark_problem = xVelocityBC.benchmark_problem
-    end_xVelocityBC_time = time()
-    xVelocityBC_time = end_xVelocityBC_time - start_xVelocityBC_time
-    print ' xVelocity BC: %.1f seconds' %xVelocityBC_time
-
-   
-
-
-    # Applying vy condition
-    start_yVelocityBC_time = time()
-    yVelocityLHS0 = sps.lil_matrix.copy(M)
-    yVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
-    yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
-    end_yVelocityBC_time = time()
-    yVelocityBC_time = end_yVelocityBC_time - start_yVelocityBC_time
-    print ' yVelocity BC: %.1f seconds' %yVelocityBC_time
-
-
-
     
-    # Applying psi condition
-    start_streamfunctionBC_time = time()
-    streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
-    streamFunctionBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
-    streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
-    end_streamfunctionBC_time = time()
-    streamfunctionBC_time = end_streamfunctionBC_time - start_streamfunctionBC_time
-    print ' streamfunction BC: %.1f seconds' %streamfunctionBC_time
-
+     # Applying vy condition
+     start_yVelocityBC_time = time()
+     yVelocityLHS0 = sps.lil_matrix.copy(M)
+     yVelocityBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
+     yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
+     end_yVelocityBC_time = time()
+     yVelocityBC_time = end_yVelocityBC_time - start_yVelocityBC_time
+     print ' yVelocity BC: %.1f seconds' %yVelocityBC_time
+ 
+ 
+ 
+     
+     # Applying psi condition
+     start_streamfunctionBC_time = time()
+     streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
+     streamFunctionBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
+     streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
+     end_streamfunctionBC_time = time()
+     streamfunctionBC_time = end_streamfunctionBC_time - start_streamfunctionBC_time
+     print ' streamfunction BC: %.1f seconds' %streamfunctionBC_time
+ 
+ 
+ 
+    
+     # Applying vorticity condition
+     vorticityDirichletNodes = boundaryNodes
+ 
+ 
+    
+     # Applying concentration condition
+     start_concentrationBC_time = time()
+     concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
+     concentrationBC = benchmarkProblems.linearStent(numPhysical,numNodes,x,y)
+     concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
+     end_concentrationBC_time = time()
+     concentrationBC_time = end_concentrationBC_time - start_concentrationBC_time
+     print ' concentration BC: %.1f seconds' %concentrationBC_time
+ 
+ 
+ 
+    
    
-    # Applying vorticity condition
-    vorticityDirichletNodes = boundaryNodes
+    # Quad Element
+    elif polynomial_option == 3:
+  
+     # Applying vx condition
+     start_xVelocityBC_time = time()
+     xVelocityLHS0 = sps.lil_matrix.copy(M)
+     xVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
+     xVelocityBC.xVelocityCondition(boundaryEdges,xVelocityLHS0,neighborsNodes)
+     benchmark_problem = xVelocityBC.benchmark_problem
+     end_xVelocityBC_time = time()
+     xVelocityBC_time = end_xVelocityBC_time - start_xVelocityBC_time
+     print ' xVelocity BC: %.1f seconds' %xVelocityBC_time
+ 
+    
+ 
+ 
+     # Applying vy condition
+     start_yVelocityBC_time = time()
+     yVelocityLHS0 = sps.lil_matrix.copy(M)
+     yVelocityBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
+     yVelocityBC.yVelocityCondition(boundaryEdges,yVelocityLHS0,neighborsNodes)
+     end_yVelocityBC_time = time()
+     yVelocityBC_time = end_yVelocityBC_time - start_yVelocityBC_time
+     print ' yVelocity BC: %.1f seconds' %yVelocityBC_time
+ 
+ 
+ 
+     
+     # Applying psi condition
+     start_streamfunctionBC_time = time()
+     streamFunctionLHS0 = sps.lil_matrix.copy(Kxx) + sps.lil_matrix.copy(Kyy)
+     streamFunctionBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
+     streamFunctionBC.streamFunctionCondition(boundaryEdges,streamFunctionLHS0,neighborsNodes)
+     end_streamfunctionBC_time = time()
+     streamfunctionBC_time = end_streamfunctionBC_time - start_streamfunctionBC_time
+     print ' streamfunction BC: %.1f seconds' %streamfunctionBC_time
+ 
+    
+     # Applying vorticity condition
+     vorticityDirichletNodes = boundaryNodes
+ 
+ 
+     # Applying concentration condition
+     start_concentrationBC_time = time()
+     concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
+     concentrationBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
+     concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
+     end_concentrationBC_time = time()
+     concentrationBC_time = end_concentrationBC_time - start_concentrationBC_time
+     print ' concentration BC: %.1f seconds' %concentrationBC_time
 
 
-    # Applying concentration condition
-    start_concentrationBC_time = time()
-    concentrationLHS0 = (sps.lil_matrix.copy(M)/dt) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kxx) + (1.0/(Re*Sc))*sps.lil_matrix.copy(Kyy)
-    concentrationBC = benchmarkProblems.quadStent(numPhysical,numNodes,x,y)
-    concentrationBC.concentrationCondition(boundaryEdges,concentrationLHS0,neighborsNodes)
-    end_concentrationBC_time = time()
-    concentrationBC_time = end_concentrationBC_time - start_concentrationBC_time
-    print ' concentration BC: %.1f seconds' %concentrationBC_time
-   # ---------------------------------------------------------------------------------
+  elif description_option == 2:
+   vxMesh = 0.0*vx
+   vyMesh = 0.0*vy
+
+   vxALE = vx - vxMesh
+   vyALE = vy - vyMesh
+  # ---------------------------------------------------------------------------------
    
    
  
@@ -679,7 +702,7 @@ for t in tqdm(range(1, nt)):
 
    # Linear Element   
    if polynomial_option == 0 or polynomial_option == 1:
-    w_d, c_d = semiLagrangian.Linear2D(numNodes, neighborsElements, IEN, x, y, vxSL, vySL, dt, w, c)
+    w_d, c_d = semiLagrangian.Linear2D(numNodes, neighborsElements, IEN, x, y, vxALE, vyALE, dt, w, c)
 
    # Mini Element   
    elif polynomial_option == 2:
@@ -687,7 +710,7 @@ for t in tqdm(range(1, nt)):
  
    # Quad Element   
    elif polynomial_option == 3:
-    w_d, c_d = semiLagrangian.Quad2D(numNodes, neighborsElements, IEN, x, y, vxSL, vySL, dt, w, c)
+    w_d, c_d = semiLagrangian.Quad2D(numNodes, neighborsElements, IEN, x, y, vxALE, vyALE, dt, w, c)
  
    end_SL_time = time()
    SL_time = end_SL_time - start_SL_time
@@ -982,7 +1005,7 @@ elif end_type == 3:
 
 
 # -------------------------------- Export Relatory ---------------------------------------
-relatory.export(save.path, folderResults, sys.argv[0], benchmark_problem, scheme_name, mshFileName, numNodes, numElements, minLengthMesh, dt, numIteration, Re, Sc, import_mesh_time, assembly_time, bc_apply_time, solution_time, polynomial_order, gausspoints, observation)
+relatory.export(save.path, folderResults, sys.argv[0], benchmark_problem, description_name, scheme_name, mshFileName, numNodes, numElements, minLengthMesh, dt, numIteration, Re, Sc, import_mesh_time, assembly_time, bc_apply_time, solution_time, polynomial_order, gausspoints, observation)
 # ----------------------------------------------------------------------------------------
 
 

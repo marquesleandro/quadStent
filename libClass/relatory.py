@@ -18,12 +18,13 @@
 import os
 import datetime
 
-def export(_save_path, _directory_name, _simulator_name, _benchmark_problem, _scheme, _mesh_name, _npoints, _nelem, _length_min, _dt, _nt, _Re, _Sc, _import_mesh_time, _assembly_time, _bc_apply_time, _solution_time, _polynomial_order, _gausspoints, observation):
+def export(_save_path, _directory_name, _simulator_name, _benchmark_problem, _description, _scheme, _mesh_name, _npoints, _nelem, _length_min, _dt, _nt, _Re, _Sc, _import_mesh_time, _assembly_time, _bc_apply_time, _solution_time, _polynomial_order, _gausspoints, observation):
 
  save_path = _save_path
  directory_name = _directory_name
  simulator_name = _simulator_name
  benchmark_problem = _benchmark_problem
+ description = _description
  scheme = _scheme
 
  mesh_name = _mesh_name
@@ -63,6 +64,7 @@ def export(_save_path, _directory_name, _simulator_name, _benchmark_problem, _sc
 
  relatory.write(' Simulator Name: ' + str(simulator_name) + '\n')
  relatory.write(' Benchmark Problem: ' + str(benchmark_problem) + '\n')
+ relatory.write(' Motion Description: ' + str(description) + '\n')
  relatory.write(' Scheme: ' + str(scheme) + '\n')
  relatory.write(' Element Type: ' + str(polynomial_order) + '\n')
  relatory.write(' Gaussian Quadrature (Gauss Points): ' + str(gausspoints) + '\n')
